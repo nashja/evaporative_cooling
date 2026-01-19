@@ -16,7 +16,7 @@ from homeassistant.loader import async_get_loaded_integration
 
 from .api import EvaporativeCoolingApiClient
 from .const import DOMAIN, LOGGER
-from .coordinator import BlueprintDataUpdateCoordinator
+from .coordinator import EvaporativeCoolingDataUpdateCoordinator
 from .data import EvaporativeCoolingData
 
 if TYPE_CHECKING:
@@ -24,10 +24,12 @@ if TYPE_CHECKING:
 
     from .data import EvaporativeCoolingConfigEntry
 
+#
+# Only implementing a sensor for evaporative cooling
+# There needs to be a sensor.py
+#
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
-    Platform.BINARY_SENSOR,
-    Platform.SWITCH,
 ]
 
 
@@ -37,12 +39,19 @@ async def async_setup_entry(
     entry: EvaporativeCoolingConfigEntry,
 ) -> bool:
     """Set up this integration using UI."""
-    coordinator = BlueprintDataUpdateCoordinator(
+    LOGGER.debug("async_setup_entry in __init__.py")
+    LOGGER.debug("config_entry.options %s",entry.options)
+    # Initialise the coordinator that manages data updates from the integration
+    # This is defined in coordinator.py
+    coordinator = EvaporativeCoolingDataUpdateCoordinator(
         hass=hass,
         logger=LOGGER,
         name=DOMAIN,
         update_interval=timedelta(hours=1),
     )
+    if not coordinator.api.connected:
+    raise ConfigEntryNotReady
+
     entry.runtime_data = EvaporativeCoolingData(
         client=EvaporativeCoolingApiClient(
             username=entry.data[CONF_USERNAME],

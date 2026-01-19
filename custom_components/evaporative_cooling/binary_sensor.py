@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-    from .coordinator import BlueprintDataUpdateCoordinator
+    from .coordinator import EvaporativeCoolingDataUpdateCoordinator
     from .data import EvaporativeCoolingConfigEntry
 
 ENTITY_DESCRIPTIONS = (
@@ -48,7 +48,7 @@ class EvaporativeCoolingBinarySensor(EvaporativeCoolingEntity, BinarySensorEntit
 
     def __init__(
         self,
-        coordinator: BlueprintDataUpdateCoordinator,
+        coordinator: EvaporativeCoolingDataUpdateCoordinator,
         entity_description: BinarySensorEntityDescription,
     ) -> None:
         """Initialize the binary_sensor class."""

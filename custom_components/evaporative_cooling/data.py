@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from homeassistant.loader import Integration
 
     from .api import EvaporativeCoolingApiClient
-    from .coordinator import BlueprintDataUpdateCoordinator
+    from .coordinator import EvaporativeCoolingDataUpdateCoordinator
 
 
 type EvaporativeCoolingConfigEntry = ConfigEntry[EvaporativeCoolingData]
@@ -18,8 +18,8 @@ type EvaporativeCoolingConfigEntry = ConfigEntry[EvaporativeCoolingData]
 
 @dataclass
 class EvaporativeCoolingData:
-    """Data for the Blueprint integration."""
+    """Data for the EvaporativeCooling integration."""
 
     client: EvaporativeCoolingApiClient
-    coordinator: BlueprintDataUpdateCoordinator
+    coordinator: EvaporativeCoolingDataUpdateCoordinator
     integration: Integration
