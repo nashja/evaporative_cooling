@@ -7,15 +7,20 @@ https://github.com/nashja/evaporative_cooling
 
 from __future__ import annotations
 
-from datetime import timedelta
 from typing import TYPE_CHECKING
 
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.const import Platform
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.loader import async_get_loaded_integration
 
 from .api import EvaporativeCoolingApiClient
-from .const import DOMAIN, LOGGER
+from .const import (
+    CONF_HUMIDITY_SENSOR,
+    CONF_MONITOR_SENSOR,
+    CONF_SENSOR_ID,
+    CONF_TEMPERATURE_SENSOR,
+    LOGGER,
+)
 from .coordinator import EvaporativeCoolingDataUpdateCoordinator
 from .data import EvaporativeCoolingData
 
@@ -40,23 +45,23 @@ async def async_setup_entry(
 ) -> bool:
     """Set up this integration using UI."""
     LOGGER.debug("async_setup_entry in __init__.py")
-    LOGGER.debug("config_entry.options %s",entry.options)
+    LOGGER.debug("config_entry.options %s", entry.options)
     # Initialise the coordinator that manages data updates from the integration
     # This is defined in coordinator.py
     coordinator = EvaporativeCoolingDataUpdateCoordinator(
-        hass=hass,
-        logger=LOGGER,
-        name=DOMAIN,
-        update_interval=timedelta(hours=1),
+        hass=hass, config_entry=entry, logger=LOGGER, name="EC Update Coordinator"
     )
-    if not coordinator.api.connected:
-    raise ConfigEntryNotReady
+
+    # if not coordinator.api.connected:
+    #    raise ConfigEntryNotReady
 
     entry.runtime_data = EvaporativeCoolingData(
         client=EvaporativeCoolingApiClient(
-            username=entry.data[CONF_USERNAME],
-            password=entry.data[CONF_PASSWORD],
-            session=async_get_clientsession(hass),
+            temp_sensor_id=entry.data[CONF_TEMPERATURE_SENSOR],
+            humidity_sensor_id=entry.data[CONF_HUMIDITY_SENSOR],
+            monitor_sensor_id=entry.data[CONF_MONITOR_SENSOR],
+            sensor_id=entry.data[CONF_SENSOR_ID],
+            hass=hass,
         ),
         integration=async_get_loaded_integration(hass, entry.domain),
         coordinator=coordinator,

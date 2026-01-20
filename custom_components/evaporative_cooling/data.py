@@ -20,6 +20,7 @@ type EvaporativeCoolingConfigEntry = ConfigEntry[EvaporativeCoolingData]
 class EvaporativeCoolingData:
     """Data for the EvaporativeCooling integration."""
 
+    # Not sure we need a client ...
     client: EvaporativeCoolingApiClient
     coordinator: EvaporativeCoolingDataUpdateCoordinator
     integration: Integration

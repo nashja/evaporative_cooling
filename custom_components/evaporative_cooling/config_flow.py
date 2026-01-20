@@ -10,18 +10,15 @@ from homeassistant import config_entries
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.config_entries import (
     ConfigEntry,
-    ConfigFlow,
     ConfigFlowResult,
     OptionsFlow,
 )
 from homeassistant.const import (
     CONF_SCAN_INTERVAL,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers import selector
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
-from slugify import slugify
 
 from .api import (
     EvaporativeCoolingApiClient,
@@ -31,6 +28,7 @@ from .api import (
 )
 from .const import (
     CONF_HUMIDITY_SENSOR,
+    CONF_MONITOR_SENSOR,
     CONF_SENSOR_ID,
     CONF_TEMPERATURE_SENSOR,
     DEFAULT_SCAN_INTERVAL,
@@ -60,14 +58,11 @@ STEP_SETTINGS_DATA_SCHEMA = vol.Schema(
 
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
-    """Validate the user input allows us to connect.
+    """
+    Validate the user input allows us to connect.
 
     Data has the keys from STEP_USER_DATA_SCHEMA with values provided by the user.
     """
-    # TODO validate the data can be used to set up a connection.
-    # await hass.async_add_executor_job(
-    #     your_validate_func, data[CONF_USERNAME], data[CONF_PASSWORD]
-    # )
     LOGGER.debug("validate input data from config  %s", data)
     # do the validations step here for the two sensors (temp and humidity)
     api = EvaporativeCoolingApiClient(
@@ -75,9 +70,10 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         humidity_sensor_id=data[CONF_HUMIDITY_SENSOR],
         temp_sensor_id=data[CONF_TEMPERATURE_SENSOR],
         sensor_id=data[CONF_SENSOR_ID],
+        monitor_sensor_id=data[CONF_MONITOR_SENSOR],
     )
     try:
-        await hass.async_add_executor_job(api.connect)
+        await hass.async_add_executor_job(api.config)
     # Here the errors are EvaporativeCoolingTemperatureConfigurationError
     # EvaporativeCoolingHumidityConfigurationError
     # EvaporativeCoolingConfigurationError
@@ -97,70 +93,104 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: ConfigEntry,
+    ) -> EvaporativeCoolingOptionsFlowHandler:
+        """Get the options flow for this handler."""
+        # Remove this method and the ExampleOptionsFlowHandler class
+        # if you do not want any options for your integration.
+        return EvaporativeCoolingOptionsFlowHandler(config_entry)
+
     async def async_step_user(
-        self,
-        user_input: dict | None = None,
-    ) -> config_entries.ConfigFlowResult:
-        """Handle a flow initialized by the user."""
-        _errors = {}
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle the initial step."""
+        # Called when you initiate adding an integration via the UI
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            # The form has been filled in and submitted, so process the data provided.
+            try:
+                # Validate that the setup data is valid and if not handle errors.
+                # The errors["base"] values match the values in your strings.json and translation files.
+                info = await validate_input(self.hass, user_input)
+            except ConfigEntryError:
+                errors["base"] = "configuration"
+            except Exception:  # pylint: disable=broad-except
+                LOGGER.exception("Unexpected exception")
+                errors["base"] = "unknown"
+
+            if "base" not in errors:
+                # Validation was successful, so create a unique id for this instance of your integration
+                # and create the config entry.
+                await self.async_set_unique_id(info.get("title"))
+                self._abort_if_unique_id_configured()
+                return self.async_create_entry(title=info["title"], data=user_input)
+
+        # Show initial form.
+
+        return self.async_show_form(
+            step_id="user", data_schema=STEP_SETTINGS_DATA_SCHEMA, errors=errors
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Add reconfigure step to allow to reconfigure a config entry."""
+        # This methid displays a reconfigure option in the integration and is
+        # different to options.
+        # It can be used to reconfigure any of the data submitted when first installed.
+        # This is optional and can be removed if you do not want to allow reconfiguration.
+        errors: dict[str, str] = {}
+        config_entry = self._get_reconfigure_entry()
+        # config_entry = self.hass.config_entries.async_get_entry(
+        #    self.context["entry_id"]
+        # )
+
         if user_input is not None:
             try:
-                await self._test_credentials(
-                    username=user_input[CONF_USERNAME],
-                    password=user_input[CONF_PASSWORD],
-                )
-            except EvaporativeCoolingApiClientAuthenticationError as exception:
-                LOGGER.warning(exception)
-                _errors["base"] = "auth"
-            except EvaporativeCoolingApiClientCommunicationError as exception:
-                LOGGER.error(exception)
-                _errors["base"] = "connection"
-            except EvaporativeCoolingApiClientError as exception:
-                LOGGER.exception(exception)
-                _errors["base"] = "unknown"
+                user_input[CONF_HUMIDITY_SENSOR] = config_entry.data[
+                    CONF_HUMIDITY_SENSOR
+                ]
+                user_input[CONF_TEMPERATURE_SENSOR] = config_entry.data[
+                    CONF_TEMPERATURE_SENSOR
+                ]
+                user_input[CONF_SENSOR_ID] = config_entry.data[CONF_SENSOR_ID]
+                await validate_input(self.hass, user_input)
+
+            except ConfigEntryError:
+                errors["base"] = "configuration"
+            except Exception:  # pylint: disable=broad-except
+                LOGGER.exception("Unexpected exception")
+                errors["base"] = "unknown"
             else:
-                await self.async_set_unique_id(
-                    ## Do NOT use this in production code
-                    ## The unique_id should never be something that can change
-                    ## https://developers.home-assistant.io/docs/config_entries_config_flow_handler#unique-ids
-                    unique_id=slugify(user_input[CONF_USERNAME])
-                )
-                self._abort_if_unique_id_configured()
-                return self.async_create_entry(
-                    title=user_input[CONF_USERNAME],
-                    data=user_input,
+                return self.async_update_reload_and_abort(
+                    config_entry,
+                    unique_id=config_entry.unique_id,
+                    data={**config_entry.data, **user_input},
+                    reason="reconfigure_successful",
                 )
 
         return self.async_show_form(
-            step_id="user",
+            step_id="reconfigure",
             data_schema=vol.Schema(
                 {
-                    vol.Required(
-                        CONF_USERNAME,
-                        default=(user_input or {}).get(CONF_USERNAME, vol.UNDEFINED),
-                    ): selector.TextSelector(
-                        selector.TextSelectorConfig(
-                            type=selector.TextSelectorType.TEXT,
+                    vol.Required(CONF_HUMIDITY_SENSOR): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            domain=SENSOR_DOMAIN  # , filter={"integration": "weather"}
                         ),
                     ),
-                    vol.Required(CONF_PASSWORD): selector.TextSelector(
-                        selector.TextSelectorConfig(
-                            type=selector.TextSelectorType.PASSWORD,
+                    vol.Required(CONF_TEMPERATURE_SENSOR): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            domain=SENSOR_DOMAIN  # , filter={"integration": "weather"}
                         ),
                     ),
-                },
+                }
             ),
-            errors=_errors,
+            errors=errors,
         )
-
-    async def _test_credentials(self, username: str, password: str) -> None:
-        """Validate credentials."""
-        client = EvaporativeCoolingApiClient(
-            username=username,
-            password=password,
-            session=async_create_clientsession(self.hass),
-        )
-        await client.async_get_data()
 
 
 class EvaporativeCoolingOptionsFlowHandler(OptionsFlow):
@@ -171,12 +201,13 @@ class EvaporativeCoolingOptionsFlowHandler(OptionsFlow):
         # self.config_entry = config_entry
         self.options = dict(config_entry.options)
 
-    async def async_step_init(self, user_input=None):
+    async def async_step_init(
+        self, user_input: dict[str, Any] = None
+    ) -> dict[str, Any]:
         """Handle options flow."""
         if user_input is not None:
             options = self.config_entry.options | user_input
-            return self.async_create_entry(title="", data=options)
-
+            return self.async_create_entry(title="", data=options)  # type: ignore
         # It is recommended to prepopulate options fields with default values if available.
         # These will be the same default values you use on your coordinator for setting variable values
         # if the option has not been set.
@@ -190,11 +221,3 @@ class EvaporativeCoolingOptionsFlowHandler(OptionsFlow):
         )
 
         return self.async_show_form(step_id="init", data_schema=data_schema)
-
-
-class CannotConnect(HomeAssistantError):
-    """Error to indicate we cannot connect."""
-
-
-class InvalidAuth(HomeAssistantError):
-    """Error to indicate there is invalid auth."""

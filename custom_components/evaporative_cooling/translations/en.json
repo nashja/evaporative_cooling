@@ -2,20 +2,34 @@
     "config": {
         "step": {
             "user": {
+                "title": "Assign Sensors",
                 "description": "If you need help with the configuration have a look here: https://github.com/nashja/evaporative_cooling",
                 "data": {
-                    "username": "Username",
-                    "password": "Password"
+                    "humidity_sensor": "Select Humidity Sensor",
+                    "temperature_sensor": "Select Temperature Sensor",
+                    "monitor_sensor": "Select Internal Temperature Monitoring sensor"
                 }
             }
         },
         "error": {
-            "auth": "Username/Password is wrong.",
-            "connection": "Unable to connect to the server.",
+            "configuration": "Unable to configure the sensors.",
             "unknown": "Unknown error occurred."
         },
         "abort": {
             "already_configured": "This entry is already configured."
+        }
+    },
+    "options": {
+        "error": {
+            "invalid_path": "The path provided is not valid"
+        },
+        "step": {
+            "init": {
+                "title": "Manage EC Options",
+                "data": {
+                    "frequency": "update frequency"
+                }
+            }
         }
     }
 }
