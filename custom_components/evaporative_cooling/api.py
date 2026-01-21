@@ -94,9 +94,9 @@ class EvaporativeCoolingApiClient:
             "sensor": None,
             "value": None,
         }
-        self.DEVICES[DeviceType.EC_TEMPERATURE_SENSOR] = {
+        self.DEVICES[DeviceType.EC_HUMIDITY_SENSOR] = {
             "id": humidity_sensor_id,
-            "type": DeviceType.EC_TEMPERATURE_SENSOR,
+            "type": DeviceType.EC_HUMIDITY_SENSOR,
             "sensor": None,
             "value": None,
         }
@@ -140,18 +140,21 @@ class EvaporativeCoolingApiClient:
 
         th = self.DEVICES[DeviceType.EC_HUMIDITY_SENSOR]
         th["sensor"] = er.async_validate_entity_id(registry, th["id"])
-        th["value"] = self.hass.states.get(ts["sensor"])
+        th["value"] = self.hass.states.get(th["sensor"])
         #
         # This gets the state of the entity
         #
 
         is_valid = False
         if th["value"] is not None and ts["value"] is not None:
+            # temp_info = ts["value"]
+            # hum_info = th["value"]
+            # print(temp_info, hum_info)
             is_temp = (
-                ts["sensor"].attributes["device_class"] == SensorDeviceClass.TEMPERATURE
+                ts["value"].attributes["device_class"] == SensorDeviceClass.TEMPERATURE
             )
             is_humidity = (
-                th["sensor"].attributes["device_class"] == SensorDeviceClass.HUMIDITY
+                th["value"].attributes["device_class"] == SensorDeviceClass.HUMIDITY
             )
             is_valid = is_temp and is_humidity
 

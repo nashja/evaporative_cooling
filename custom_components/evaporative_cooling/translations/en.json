@@ -5,6 +5,7 @@
                 "title": "Assign Sensors",
                 "description": "If you need help with the configuration have a look here: https://github.com/nashja/evaporative_cooling",
                 "data": {
+                    "sensor_id": "Name for Evaporative Cooling Sensor",
                     "humidity_sensor": "Select Humidity Sensor",
                     "temperature_sensor": "Select Temperature Sensor",
                     "monitor_sensor": "Select Internal Temperature Monitoring sensor"
@@ -13,7 +14,8 @@
         },
         "error": {
             "configuration": "Unable to configure the sensors.",
-            "unknown": "Unknown error occurred."
+            "unknown": "Unknown error occurred.",
+            "temperature_sensor": "invalid temperature sensor"
         },
         "abort": {
             "already_configured": "This entry is already configured."

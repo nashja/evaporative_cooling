@@ -10,3 +10,7 @@ logger:
   default: info
   logs:
     custom_components.evaporative_cooling: debug
+
+debugpy:
+  start: true
+  wait: true

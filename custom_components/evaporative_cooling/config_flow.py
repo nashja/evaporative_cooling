@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+from tkinter import SE
 from typing import TYPE_CHECKING, Any
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    # SensorEntity,
+    # SensorStateClass,
+)
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlowResult,
@@ -45,12 +51,20 @@ STEP_SETTINGS_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_SENSOR_ID): cv.string,
         vol.Required(CONF_HUMIDITY_SENSOR): selector.EntitySelector(
             selector.EntitySelectorConfig(
-                domain=SENSOR_DOMAIN  # , filter={"integration": "weather"}
+                domain=SENSOR_DOMAIN,
+                device_class=SensorDeviceClass.HUMIDITY,  # , filter={"integration": "weather"}
             ),
         ),
         vol.Required(CONF_TEMPERATURE_SENSOR): selector.EntitySelector(
             selector.EntitySelectorConfig(
-                domain=SENSOR_DOMAIN  # , filter={"integration": "weather"}
+                domain=SENSOR_DOMAIN,  # ,
+                device_class=SensorDeviceClass.TEMPERATURE,
+            ),
+        ),
+        vol.Optional(CONF_MONITOR_SENSOR): selector.EntitySelector(
+            selector.EntitySelectorConfig(
+                domain=SENSOR_DOMAIN,
+                device_class=SensorDeviceClass.TEMPERATURE,  # , filter={"integration": "weather"}
             ),
         ),
     }
@@ -70,7 +84,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         humidity_sensor_id=data[CONF_HUMIDITY_SENSOR],
         temp_sensor_id=data[CONF_TEMPERATURE_SENSOR],
         sensor_id=data[CONF_SENSOR_ID],
-        monitor_sensor_id=data[CONF_MONITOR_SENSOR],
+        monitor_sensor_id=data.get("CONF_MONITOR_SENSOR", ""),  # [CONF_MONITOR_SENSOR],
     )
     try:
         await hass.async_add_executor_job(api.config)
@@ -79,7 +93,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     # EvaporativeCoolingConfigurationError
     # If the authentication is wrong, raise InvalidAuth
     except EvaporativeCoolingTemperatureConfigurationError as err:
-        raise ConfigEntryError from err
+        raise EvaporativeCoolingTemperatureConfigurationError from err
     except EvaporativeCoolingHumidityConfigurationError as err:
         raise ConfigEntryError from err
     except EvaporativeCoolingConfigurationError as err:
@@ -114,10 +128,12 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             # The form has been filled in and submitted, so process the data provided.
             try:
                 # Validate that the setup data is valid and if not handle errors.
-                # The errors["base"] values match the values in your strings.json and translation files.
+                # The errors["base"] values match the values in your strings.json and translation files.pi
                 info = await validate_input(self.hass, user_input)
             except ConfigEntryError:
                 errors["base"] = "configuration"
+            except EvaporativeCoolingTemperatureConfigurationError:
+                errors["base"] = "temperature_sensor"
             except Exception:  # pylint: disable=broad-except
                 LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
@@ -179,12 +195,14 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_HUMIDITY_SENSOR): selector.EntitySelector(
                         selector.EntitySelectorConfig(
-                            domain=SENSOR_DOMAIN  # , filter={"integration": "weather"}
+                            domain=SENSOR_DOMAIN,
+                            device_class=SensorDeviceClass.HUMIDITY,  # , filter={"integration": "weather"}
                         ),
                     ),
                     vol.Required(CONF_TEMPERATURE_SENSOR): selector.EntitySelector(
                         selector.EntitySelectorConfig(
-                            domain=SENSOR_DOMAIN  # , filter={"integration": "weather"}
+                            domain=SENSOR_DOMAIN,
+                            device_class=SensorDeviceClass.TEMPERATURE,  # , filter={"integration": "weather"}
                         ),
                     ),
                 }
