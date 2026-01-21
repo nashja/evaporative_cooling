@@ -191,10 +191,10 @@ class EvaporativeCoolingApiClient:
                 device_type=device.get("type"),
                 name=self.get_device_name(device.get("id"), device.get("type")),
                 state=self.get_device_value(
-                    device.get("id"), device.get("type"), device.get("sensor")
+                    device.get("id"), device.get("type"), device.get("id")
                 ),
             )
-            for device in self.DEVICES
+            for device in self.DEVICES.values()
         ]
 
     def get_device_unique_id(self, device_id: str, device_type: DeviceType) -> str:
@@ -224,36 +224,43 @@ class EvaporativeCoolingApiClient:
     ) -> float | bool:
         """Get device value."""
         if device_type == DeviceType.EC_TEMPERATURE_SENSOR:
-            tsensor = self.hass.states.get(sensor)
+            #
+            # When called from coordinator (not config)
+            # config has not been called - (two api objects)
+            # but device_id is set from config, so use this instead of sensor in get
+            #
+            tsensor = self.hass.states.get(device_id)
             if not tsensor:
                 raise EvaporativeCoolingReadoutError
             return float(tsensor.state)
 
         if device_type == DeviceType.EC_HUMIDITY_SENSOR:
-            hsensor = self.hass.states.get(sensor)
+            hsensor = self.hass.states.get(device_id)
             if not hsensor:
                 raise EvaporativeCoolingReadoutError
             return float(hsensor.state)
 
         if device_type == DeviceType.EVAPORATIVE_COOLING_SENSOR:
-            LOGGER.debug(
-                " get-device-value (stored): temp Sensor= %s, humididty sensor = %s",
-                self.ts.get("sensor").state,
-                self.hs.get("sensor").state,
-                # self.tSensor.state,
-                # self.hSensor.state,
-            )
+            # LOGGER.debug(
+            #    " get-device-value (stored): temp Sensor= %s, humididty sensor = %s",
+            #    self.ts.get("id").state,
+            #    self.hs.get("id").state,
+            # self.tSensor.state,
+            # self.hSensor.state,
+            # )
             try:
                 # tSensor = self.hass.states.get(self.temp_sensor).state
                 # hSensor = self.hass.states.get(self.humidity_sensor).state
-                tSensor = self.ts.get("value")
-                hSensor = self.hs.get("value")
+                tSensor = self.hass.states.get(self.ts["id"])
+                hSensor = self.hass.states.get(self.hs["id"])
+                # tSensor = self.ts.get("value")
+                # hSensor = self.hs.get("value")
+                temp = float(tSensor.state)
+                humidity = float(hSensor.state)
             except Exception as e:  # pylint: disable=broad-except
                 LOGGER.exception("Unexpected exception", e)
                 return 0.0
 
-            temp = float(tSensor)
-            humidity = float(hSensor)
             LOGGER.debug(
                 " get-device-value (lookup): temp Sensor= %s, humididty sensor = %s",
                 temp,

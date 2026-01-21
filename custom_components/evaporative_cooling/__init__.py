@@ -59,7 +59,7 @@ async def async_setup_entry(
         client=EvaporativeCoolingApiClient(
             temp_sensor_id=entry.data[CONF_TEMPERATURE_SENSOR],
             humidity_sensor_id=entry.data[CONF_HUMIDITY_SENSOR],
-            monitor_sensor_id=entry.data[CONF_MONITOR_SENSOR],
+            monitor_sensor_id=entry.data.get("CONF_MONITOR_SENSOR", ""),
             sensor_id=entry.data[CONF_SENSOR_ID],
             hass=hass,
         ),
