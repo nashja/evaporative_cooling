@@ -7,6 +7,7 @@ https://github.com/nashja/evaporative_cooling
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from homeassistant.const import Platform
@@ -19,6 +20,7 @@ from .const import (
     CONF_MONITOR_SENSOR,
     CONF_SENSOR_ID,
     CONF_TEMPERATURE_SENSOR,
+    DEFAULT_SCAN_INTERVAL,
     LOGGER,
 )
 from .coordinator import EvaporativeCoolingDataUpdateCoordinator
@@ -48,8 +50,17 @@ async def async_setup_entry(
     LOGGER.debug("config_entry.options %s", entry.options)
     # Initialise the coordinator that manages data updates from the integration
     # This is defined in coordinator.py
+    #
+    # TODO if there are options - set the coordinator up with the new update interval
+    #
+    interval = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
+    LOGGER.debug("Scan Interval will be set to %d", interval)
     coordinator = EvaporativeCoolingDataUpdateCoordinator(
-        hass=hass, config_entry=entry, logger=LOGGER, name="EC Update Coordinator"
+        hass=hass,
+        config_entry=entry,
+        logger=LOGGER,
+        name="EC Update Coordinator",
+        update_interval=timedelta(interval),
     )
 
     # if not coordinator.api.connected:
@@ -59,7 +70,7 @@ async def async_setup_entry(
         client=EvaporativeCoolingApiClient(
             temp_sensor_id=entry.data[CONF_TEMPERATURE_SENSOR],
             humidity_sensor_id=entry.data[CONF_HUMIDITY_SENSOR],
-            monitor_sensor_id=entry.data.get("CONF_MONITOR_SENSOR", ""),
+            monitor_sensor_id=entry.data.get(CONF_MONITOR_SENSOR, ""),
             sensor_id=entry.data[CONF_SENSOR_ID],
             hass=hass,
         ),

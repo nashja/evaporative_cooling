@@ -3,8 +3,15 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from xml.etree.ElementTree import VERSION
 
-from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorEntityDescription,
+    SensorStateClass,
+)
+from homeassistant.const import UnitOfTemperature
 
 from .entity import EvaporativeCoolingEntity
 
@@ -18,8 +25,11 @@ if TYPE_CHECKING:
 ENTITY_DESCRIPTIONS = (
     SensorEntityDescription(
         key="evaporative_cooling",
-        name="Integration Sensor",
-        icon="mdi:format-quote-close",
+        name="Evaporative Cooling Sensor",
+        state_class=SensorStateClass.MEASUREMENT,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        icon="mdi:air-conditioner",
     ),
 )
 
@@ -50,6 +60,8 @@ class EvaporativeCoolingSensor(EvaporativeCoolingEntity, SensorEntity):
         """Initialize the sensor class."""
         super().__init__(coordinator)
         self.entity_description = entity_description
+        # manufacturer="Sanfrancej.com",
+        # version=VERSION,
 
     @property
     def native_value(self) -> str | None:

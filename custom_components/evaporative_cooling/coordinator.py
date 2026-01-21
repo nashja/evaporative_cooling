@@ -26,3 +26,8 @@ class EvaporativeCoolingDataUpdateCoordinator(DataUpdateCoordinator):
             return await self.config_entry.runtime_data.client.async_get_data()
         except EvaporativeCoolingConfigurationError as exception:
             raise ConfigEntryError from exception
+
+
+#
+# consider adding an exception for no valid data from sensors ...
+#
