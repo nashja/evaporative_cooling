@@ -194,26 +194,25 @@ class EvaporativeCoolingApiClient:
         """Get data from the API."""
         return await self._api_wrapper()
 
+    # To get this to work, while waiting for sensors to be available need to return ConfigNotReady here
+    # then all the code for HA works to retry etc without error.
     async def _api_wrapper(self) -> Any:
         tsensor = self.hass.states.get(self.temp_sensor.device_id)
         if not tsensor:
-            LOGGER.debug("Unable to get temperature value device not yet available")
-            return {"body": 0}
-            # raise ConfigEntryNotReady
+            msg = "EC Temperature sensor not available"
+            raise ConfigEntryNotReady(msg)
         hsensor = self.hass.states.get(self.humidity_sensor.device_id)
         if not hsensor:
-            LOGGER.debug("Unable to get humidity value device not yet available")
-            return {"body": 0}
-            raise ConfigEntryNotReady
+            msg = "EC Humidity sensor not available"
+            raise ConfigEntryNotReady(msg)
         # check if the sensors are available before converting to float
         # just catch an error if they aren't
         if tsensor.state in {"unknown", "unavailable"}:
-            LOGGER.debug("Unable to get temperature value device not yet available")
-            return {"body": 0}
-
+            msg = "EC Temperature sensor not yet available"
+            raise ConfigEntryNotReady(msg)
         if hsensor.state in {"unknown", "unavailable"}:
-            LOGGER.debug("Unable to get humidity value device not yet available")
-            return {"body": 0}
+            msg = "EC Humidity sensor not yet available"
+            raise ConfigEntryNotReady(msg)
         try:
             temp = float(tsensor.state)
             humidity = float(hsensor.state)

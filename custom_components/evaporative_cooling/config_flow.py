@@ -72,39 +72,6 @@ STEP_SETTINGS_DATA_SCHEMA = vol.Schema(
 )
 
 
-async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
-    """
-    Validate the user input allows us to connect.
-
-    Data has the keys from STEP_USER_DATA_SCHEMA with values provided by the user.
-    """
-    LOGGER.debug("validate input data from config  %s", data)
-    # do the validations step here for the two sensors (temp and humidity)
-    api = EvaporativeCoolingApiClient(
-        hass=hass,
-        humidity_sensor_id=data[CONF_HUMIDITY_SENSOR],
-        temp_sensor_id=data[CONF_TEMPERATURE_SENSOR],
-        sensor_id=data[CONF_SENSOR_ID],
-        monitor_sensor_id=data.get("CONF_MONITOR_SENSOR", ""),  # [CONF_MONITOR_SENSOR],
-    )
-    try:
-        await hass.async_add_executor_job(api.config)
-    # Here the errors are EvaporativeCoolingTemperatureConfigurationError
-    # EvaporativeCoolingHumidityConfigurationError
-    # EvaporativeCoolingConfigurationError
-    # If the authentication is wrong, raise InvalidAuth
-    except EvaporativeCoolingTemperatureConfigurationError as err:
-        raise EvaporativeCoolingTemperatureConfigurationError from err
-    except EvaporativeCoolingHumidityConfigurationError as err:
-        raise ConfigEntryError from err
-    except EvaporativeCoolingConfigurationError as err:
-        raise ConfigEntryError from err
-    except EvaporativeCoolingReadoutError as err:
-        raise ConfigEntryError from err
-
-    return {"title": f"Evaoporative Cooling - {data[CONF_SENSOR_ID]}"}
-
-
 class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for EvaporativeCooling."""
 
@@ -132,7 +99,9 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 # Validate that the setup data is valid and if not handle errors.
                 # The errors["base"] values match the values in your strings.json and translation files.pi
-                info = await validate_input(self.hass, user_input)
+                # info = await validate_input(self.hass, user_input)
+                info = {"title": "ECUnique"}
+                LOGGER.debug("setting info - not now validating")
             except ConfigEntryError:
                 errors["base"] = "configuration"
             except EvaporativeCoolingTemperatureConfigurationError:
@@ -164,10 +133,6 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         # This is optional and can be removed if you do not want to allow reconfiguration.
         errors: dict[str, str] = {}
         config_entry = self._get_reconfigure_entry()
-        # config_entry = self.hass.config_entries.async_get_entry(
-        #    self.context["entry_id"]
-        # )
-
         if user_input is not None:
             try:
                 user_input[CONF_HUMIDITY_SENSOR] = config_entry.data[
@@ -177,7 +142,7 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_TEMPERATURE_SENSOR
                 ]
                 user_input[CONF_SENSOR_ID] = config_entry.data[CONF_SENSOR_ID]
-                await validate_input(self.hass, user_input)
+                # await validate_input(self.hass, user_input)
 
             except ConfigEntryError:
                 errors["base"] = "configuration"
@@ -219,7 +184,6 @@ class EvaporativeCoolingOptionsFlowHandler(OptionsFlow):
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         """Initialize options flow."""
-        # self.config_entry = config_entry
         self.options = dict(config_entry.options)
 
     async def async_step_init(

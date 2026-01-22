@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from copyreg import add_extension
+from turtle import up
 from typing import TYPE_CHECKING
 from xml.etree.ElementTree import VERSION
 
@@ -34,18 +36,26 @@ ENTITY_DESCRIPTIONS = (
 )
 
 
+#
+# In order to get the code to wait for all the sensors to be available need to set
+# update_before_add=True when adding entities.
+#
 async def async_setup_entry(
     hass: HomeAssistant,  # noqa: ARG001 Unused function argument: `hass`
     entry: EvaporativeCoolingConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the sensor platform."""
+
     async_add_entities(
-        EvaporativeCoolingSensor(
-            coordinator=entry.runtime_data.coordinator,
-            entity_description=entity_description,
-        )
-        for entity_description in ENTITY_DESCRIPTIONS
+        (
+            EvaporativeCoolingSensor(
+                coordinator=entry.runtime_data.coordinator,
+                entity_description=entity_description,
+            )
+            for entity_description in ENTITY_DESCRIPTIONS
+        ),
+        update_before_add=True,
     )
 
 

@@ -57,7 +57,7 @@ async def async_setup_entry(
     LOGGER.debug("Scan Interval will be set to %d", interval)
     coordinator = EvaporativeCoolingDataUpdateCoordinator(
         hass=hass,
-        config_entry=entry,
+        # config_entry=entry, # is this needed?
         logger=LOGGER,
         name="EC Update Coordinator",
         update_interval=timedelta(minutes=interval),
@@ -77,7 +77,7 @@ async def async_setup_entry(
         integration=async_get_loaded_integration(hass, entry.domain),
         coordinator=coordinator,
     )
-
+    # LOGGER.debug("in init: about to call config_entry_first_refresh")
     # https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-single-api-poll-for-data-for-all-entities
     await coordinator.async_config_entry_first_refresh()
 
