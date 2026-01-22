@@ -18,7 +18,7 @@ from homeassistant.components.sensor import (
     # SensorEntity,
     # SensorStateClass,
 )
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ConfigEntryNotReady
 from homeassistant.helpers import entity_registry as er
 
 
@@ -187,9 +187,6 @@ class EvaporativeCoolingApiClient:
 
     def disconnect(self) -> bool:
         """Disconnect from api."""
-        #
-        #
-        #
         self.connected = False
         return True
 
@@ -200,12 +197,23 @@ class EvaporativeCoolingApiClient:
     async def _api_wrapper(self) -> Any:
         tsensor = self.hass.states.get(self.temp_sensor.device_id)
         if not tsensor:
-            raise EvaporativeCoolingReadoutError
+            LOGGER.debug("Unable to get temperature value device not yet available")
+            return {"body": 0}
+            # raise ConfigEntryNotReady
         hsensor = self.hass.states.get(self.humidity_sensor.device_id)
         if not hsensor:
-            raise EvaporativeCoolingReadoutError
+            LOGGER.debug("Unable to get humidity value device not yet available")
+            return {"body": 0}
+            raise ConfigEntryNotReady
         # check if the sensors are available before converting to float
         # just catch an error if they aren't
+        if tsensor.state in {"unknown", "unavailable"}:
+            LOGGER.debug("Unable to get temperature value device not yet available")
+            return {"body": 0}
+
+        if hsensor.state in {"unknown", "unavailable"}:
+            LOGGER.debug("Unable to get humidity value device not yet available")
+            return {"body": 0}
         try:
             temp = float(tsensor.state)
             humidity = float(hsensor.state)
@@ -228,6 +236,11 @@ class EvaporativeCoolingApiClient:
 
             LOGGER.debug("Efficiency Temperature = %f ", best_temp)
             return {"body": best_temp}
+        except ValueError as err:
+            # raise ConfigEntryNotReady from err
+            LOGGER.debug("Unable to calculate temperature", err)
+            return {"body": 0}
+            # raise EvaporativeCoolingReadoutError
         except Exception as err:
             LOGGER.debug("Unable to calculate temperature", err)
             return {"body": 0}

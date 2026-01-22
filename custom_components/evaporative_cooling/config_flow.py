@@ -30,6 +30,7 @@ from .api import (
     EvaporativeCoolingApiClient,
     EvaporativeCoolingConfigurationError,
     EvaporativeCoolingHumidityConfigurationError,
+    EvaporativeCoolingReadoutError,
     EvaporativeCoolingTemperatureConfigurationError,
 )
 from .const import (
@@ -97,6 +98,8 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     except EvaporativeCoolingHumidityConfigurationError as err:
         raise ConfigEntryError from err
     except EvaporativeCoolingConfigurationError as err:
+        raise ConfigEntryError from err
+    except EvaporativeCoolingReadoutError as err:
         raise ConfigEntryError from err
 
     return {"title": f"Evaoporative Cooling - {data[CONF_SENSOR_ID]}"}

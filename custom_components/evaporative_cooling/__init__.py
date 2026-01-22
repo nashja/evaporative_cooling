@@ -60,7 +60,7 @@ async def async_setup_entry(
         config_entry=entry,
         logger=LOGGER,
         name="EC Update Coordinator",
-        update_interval=timedelta(interval),
+        update_interval=timedelta(minutes=interval),
     )
 
     # if not coordinator.api.connected:
