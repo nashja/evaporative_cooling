@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from copyreg import add_extension
-from turtle import up
-from typing import TYPE_CHECKING
-from xml.etree.ElementTree import VERSION
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -18,20 +16,33 @@ from homeassistant.const import UnitOfTemperature
 from .entity import EvaporativeCoolingEntity
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
     from .coordinator import EvaporativeCoolingDataUpdateCoordinator
     from .data import EvaporativeCoolingConfigEntry
 
-ENTITY_DESCRIPTIONS = (
-    SensorEntityDescription(
+
+@dataclass(frozen=True, kw_only=True)
+class EvaporativeCoolingEntityDescription(SensorEntityDescription):
+    """Describes a Sage Coffee sensor entity."""
+
+    value_fn: Callable[[dict[str, Any]], Any]
+
+
+ENTITY_DESCRIPTIONS: tuple[EvaporativeCoolingEntityDescription, ...] = (
+    EvaporativeCoolingEntityDescription(
         key="evaporative_cooling",
+        translation_key="evaporative_cooling",
         name="Evaporative Cooling Sensor",
         state_class=SensorStateClass.MEASUREMENT,
         device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        suggested_display_precision=1,
         icon="mdi:air-conditioner",
+        value_fn=lambda state: _get_boiler_target(state, BOILER_STEAM),
     ),
 )
 
@@ -46,7 +57,6 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the sensor platform."""
-
     async_add_entities(
         (
             EvaporativeCoolingSensor(
@@ -65,13 +75,13 @@ class EvaporativeCoolingSensor(EvaporativeCoolingEntity, SensorEntity):
     def __init__(
         self,
         coordinator: EvaporativeCoolingDataUpdateCoordinator,
-        entity_description: SensorEntityDescription,
+        entity_description: EvaporativeCoolingEntityDescription,
     ) -> None:
         """Initialize the sensor class."""
         super().__init__(coordinator)
         self.entity_description = entity_description
-        # manufacturer="Sanfrancej.com",
-        # version=VERSION,
+        # manufacturer="Sanfrancej.com",  # noqa: ERA001
+        # version=VERSION,  # noqa: ERA001
 
     @property
     def native_value(self) -> str | None:

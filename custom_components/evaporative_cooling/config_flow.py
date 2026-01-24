@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from tkinter import SE
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -22,15 +21,11 @@ from homeassistant.config_entries import (
 from homeassistant.const import (
     CONF_SCAN_INTERVAL,
 )
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import callback
 from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers import selector
 
 from .api import (
-    EvaporativeCoolingApiClient,
-    EvaporativeCoolingConfigurationError,
-    EvaporativeCoolingHumidityConfigurationError,
-    EvaporativeCoolingReadoutError,
     EvaporativeCoolingTemperatureConfigurationError,
 )
 from .const import (
@@ -44,16 +39,14 @@ from .const import (
     MIN_SCAN_INTERVAL,
 )
 
-if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant
-
 STEP_SETTINGS_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_SENSOR_ID): cv.string,
         vol.Required(CONF_HUMIDITY_SENSOR): selector.EntitySelector(
             selector.EntitySelectorConfig(
                 domain=SENSOR_DOMAIN,
-                device_class=SensorDeviceClass.HUMIDITY,  # , filter={"integration": "weather"}
+                device_class=SensorDeviceClass.HUMIDITY,
+                # , filter={"integration": "weather"}
             ),
         ),
         vol.Required(CONF_TEMPERATURE_SENSOR): selector.EntitySelector(
@@ -65,7 +58,8 @@ STEP_SETTINGS_DATA_SCHEMA = vol.Schema(
         vol.Optional(CONF_MONITOR_SENSOR): selector.EntitySelector(
             selector.EntitySelectorConfig(
                 domain=SENSOR_DOMAIN,
-                device_class=SensorDeviceClass.TEMPERATURE,  # , filter={"integration": "weather"}
+                device_class=SensorDeviceClass.TEMPERATURE,
+                # , filter={"integration": "weather"}
             ),
         ),
     }
@@ -98,8 +92,9 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             # The form has been filled in and submitted, so process the data provided.
             try:
                 # Validate that the setup data is valid and if not handle errors.
-                # The errors["base"] values match the values in your strings.json and translation files.pi
-                # info = await validate_input(self.hass, user_input)
+                # The errors["base"] values match the values in your strings.json
+                # #and translation files.pi
+                # info = await validate_input(self.hass, user_input)  # noqa: ERA001
                 info = {"title": "ECUnique"}
                 LOGGER.debug("setting info - not now validating")
             except ConfigEntryError:
@@ -111,7 +106,8 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
 
             if "base" not in errors:
-                # Validation was successful, so create a unique id for this instance of your integration
+                # Validation was successful, so create a unique id for this instance of
+                # #your integration
                 # and create the config entry.
                 await self.async_set_unique_id(info.get("title"))
                 self._abort_if_unique_id_configured()
@@ -130,7 +126,8 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         # This methid displays a reconfigure option in the integration and is
         # different to options.
         # It can be used to reconfigure any of the data submitted when first installed.
-        # This is optional and can be removed if you do not want to allow reconfiguration.
+        # This is optional and can be removed
+        # if you do not want to allow reconfiguration.
         errors: dict[str, str] = {}
         config_entry = self._get_reconfigure_entry()
         if user_input is not None:
@@ -142,7 +139,6 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_TEMPERATURE_SENSOR
                 ]
                 user_input[CONF_SENSOR_ID] = config_entry.data[CONF_SENSOR_ID]
-                # await validate_input(self.hass, user_input)
 
             except ConfigEntryError:
                 errors["base"] = "configuration"
@@ -164,13 +160,15 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_HUMIDITY_SENSOR): selector.EntitySelector(
                         selector.EntitySelectorConfig(
                             domain=SENSOR_DOMAIN,
-                            device_class=SensorDeviceClass.HUMIDITY,  # , filter={"integration": "weather"}
+                            device_class=SensorDeviceClass.HUMIDITY,
+                            # , filter={"integration": "weather"}
                         ),
                     ),
                     vol.Required(CONF_TEMPERATURE_SENSOR): selector.EntitySelector(
                         selector.EntitySelectorConfig(
                             domain=SENSOR_DOMAIN,
-                            device_class=SensorDeviceClass.TEMPERATURE,  # , filter={"integration": "weather"}
+                            device_class=SensorDeviceClass.TEMPERATURE,
+                            # , filter={"integration": "weather"}
                         ),
                     ),
                 }
@@ -187,15 +185,18 @@ class EvaporativeCoolingOptionsFlowHandler(OptionsFlow):
         self.options = dict(config_entry.options)
 
     async def async_step_init(
-        self, user_input: dict[str, Any] = None
+        self,
+        user_input: dict[str, Any] = None,  # type: ignore  # noqa: PGH003
     ) -> dict[str, Any]:
         """Handle options flow."""
         if user_input is not None:
             options = self.config_entry.options | user_input
-            return self.async_create_entry(title="", data=options)  # type: ignore
-        # It is recommended to prepopulate options fields with default values if available.
-        # These will be the same default values you use on your coordinator for setting variable values
-        # if the option has not been set.
+            return self.async_create_entry(title="", data=options)  # type: ignore  # noqa: PGH003
+        # It is recommended to prepopulate options fields with default values if
+        # available.
+        # These will be the same default values you use on your coordinator for setting
+        #
+        #   variable values if the option has not been set.
         data_schema = vol.Schema(
             {
                 vol.Required(

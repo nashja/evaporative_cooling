@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from random import randrange
 from sre_parse import State
 from typing import TYPE_CHECKING, Any
 
@@ -13,12 +12,8 @@ from .const import EFFICIENCY_CHART, EFFICIENCY_HUMIDITY, EFFICIENCY_TEMPERATURE
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant, State
 
-from homeassistant.components.sensor import (
-    SensorDeviceClass,
-    # SensorEntity,
-    # SensorStateClass,
-)
-from homeassistant.exceptions import HomeAssistantError, ConfigEntryNotReady
+from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 
 
@@ -67,8 +62,8 @@ class Device:
 
 
 #
-# The API here will be to make sure that the temperature sensors are available.  And then update
-# will get the current state of the temperature sensors
+# The API here will be to make sure that the temperature sensors are available.
+# And then update will get the current state of the temperature sensors
 # need to initialise this with the names of the sensors
 #
 class EvaporativeCoolingApiClient:
@@ -88,7 +83,6 @@ class EvaporativeCoolingApiClient:
         hass: HomeAssistant,
     ) -> None:
         """Initialise the API Client."""
-
         self.temp_sensor = Device(
             device_id=temp_sensor_id,
             device_type=DeviceType.EC_TEMPERATURE_SENSOR,
@@ -169,7 +163,7 @@ class EvaporativeCoolingApiClient:
             is_valid = is_temp and is_humidity
 
         LOGGER.debug(
-            "Connect: temp Sensor= %s (is temp = %s), humididty sensor = %s (is humidity = %s)",
+            "Connect: temp Sensor= %s (is temp = %s), humididty sensor = %s (is humidity = %s)",  # noqa: E501
             self.temp_sensor.device_id,
             is_temp,
             self.humidity_sensor.device_id,
@@ -194,7 +188,8 @@ class EvaporativeCoolingApiClient:
         """Get data from the API."""
         return await self._api_wrapper()
 
-    # To get this to work, while waiting for sensors to be available need to return ConfigNotReady here
+    # To get this to work, while waiting for sensors to be available
+    # need to return ConfigNotReady here
     # then all the code for HA works to retry etc without error.
     async def _api_wrapper(self) -> Any:
         tsensor = self.hass.states.get(self.temp_sensor.device_id)
@@ -217,7 +212,7 @@ class EvaporativeCoolingApiClient:
             temp = float(tsensor.state)
             humidity = float(hsensor.state)
             LOGGER.debug(
-                "EC - API get-device-value (lookup): temp Sensor= %s,humididty sensor = %s",
+                "EC - API get-device-value (lookup): temp Sensor= %s,humididty sensor = %s",  # noqa: E501
                 temp,
                 humidity,
             )

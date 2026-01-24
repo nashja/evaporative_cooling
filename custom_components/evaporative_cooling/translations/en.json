@@ -33,5 +33,12 @@
                 }
             }
         }
+    },
+    "entity": {
+        "sensor": {
+            "evaporative_cooling": {
+                "name": "Evaporative Cooling Sensor"
+            }
+        }
     }
 }
