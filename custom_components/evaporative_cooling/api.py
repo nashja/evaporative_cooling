@@ -12,9 +12,7 @@ from .const import EFFICIENCY_CHART, EFFICIENCY_HUMIDITY, EFFICIENCY_TEMPERATURE
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant, State
 
-from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
-from homeassistant.helpers import entity_registry as er
 
 
 class EvaporativeCoolingReadoutError(HomeAssistantError):
@@ -123,62 +121,6 @@ class EvaporativeCoolingApiClient:
         """Return the name of the controller."""
         return self.ec_sensor.device_id.replace(".", "_")
 
-    def config(self) -> bool:
-        """Configure the api."""
-        registry = er.async_get(self.hass)
-        # Validate + resolve entity registry id to entity_id
-
-        try:
-            valid_temp_id = er.async_validate_entity_id(
-                registry, self.temp_sensor.device_id
-            )
-            valid_humidity_id = er.async_validate_entity_id(
-                registry, self.humidity_sensor.device_id
-            )
-            self.temp_sensor.state = self.hass.states.get(self.temp_sensor.device_id)
-            self.humidity_sensor.state = self.hass.states.get(
-                self.humidity_sensor.device_id
-            )
-        except Exception as e:  # pylint: disable=broad-except
-            LOGGER.exception("Unexpected exception in configuring sensors", e)
-            raise EvaporativeCoolingConfigurationError from e
-        LOGGER.debug(
-            "API Connect: temp Sensor= %s, humididty sensor = %s)",
-            valid_temp_id,
-            valid_humidity_id,
-        )
-        is_valid = False
-        if (
-            self.humidity_sensor.state is not None
-            and self.temp_sensor.state is not None
-        ):
-            is_temp = (
-                self.temp_sensor.state.attributes["device_class"]
-                == SensorDeviceClass.TEMPERATURE
-            )
-            is_humidity = (
-                self.humidity_sensor.state.attributes["device_class"]
-                == SensorDeviceClass.HUMIDITY
-            )
-            is_valid = is_temp and is_humidity
-
-        LOGGER.debug(
-            "Connect: temp Sensor= %s (is temp = %s), humididty sensor = %s (is humidity = %s)",  # noqa: E501
-            self.temp_sensor.device_id,
-            is_temp,
-            self.humidity_sensor.device_id,
-            is_humidity,
-        )
-
-        if is_valid:
-            self.connected = True
-            return True
-        if not is_temp:
-            raise EvaporativeCoolingTemperatureConfigurationError
-        if not is_humidity:
-            raise EvaporativeCoolingHumidityConfigurationError
-        raise EvaporativeCoolingConfigurationError
-
     def disconnect(self) -> bool:
         """Disconnect from api."""
         self.connected = False
@@ -191,6 +133,7 @@ class EvaporativeCoolingApiClient:
     # To get this to work, while waiting for sensors to be available
     # need to return ConfigNotReady here
     # then all the code for HA works to retry etc without error.
+    # The ids all come from the configuration
     async def _api_wrapper(self) -> Any:
         tsensor = self.hass.states.get(self.temp_sensor.device_id)
         if not tsensor:
@@ -238,23 +181,32 @@ class EvaporativeCoolingApiClient:
             #
             # This now works, see below, can add all the info want here, and then use
             # a dictionary to get this in the sensors...
-            return {
-                "body": best_temp,
+            internal_temp = 0
+            msensor = self.hass.states.get(self.monitor_sensor.device_id)
+            if msensor and msensor.state not in {"unknown", "unavailable"}:
+                internal_temp = msensor.state
+            LOGGER.debug(
+                "EC - API get-device-value (lookup): internal temp Sensor= %s,device_id = %s",  # noqa: E501
+                internal_temp,
+                self.monitor_sensor.device_id,
+            )
+            return {  # noqa: TRY300
+                "ec_temp": best_temp,
                 "external_temp": temp,
                 "external_humidity": humidity,
-                "internal_temp": 0,
+                "internal_temp": internal_temp,
             }
         except ValueError as err:
             # raise ConfigEntryNotReady from err
             LOGGER.debug("Unable to calculate temperature", err)
-            return {"body": 0}
+            return {"ec_temp": 0}
             # raise EvaporativeCoolingReadoutError
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             LOGGER.debug("Unable to calculate temperature", err)
             return {
-                "body": 0,
+                "ec_temp": 0,
                 "external_temp": temp,
                 "external_humidity": humidity,
-                "internal_temp": 0,
+                "internal_temp": internal_temp,
             }
             # raise EvaporativeCoolingReadoutError from err

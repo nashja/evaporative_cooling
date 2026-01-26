@@ -65,6 +65,31 @@ STEP_SETTINGS_DATA_SCHEMA = vol.Schema(
     }
 )
 
+STEP_SETTINGS_RECONFIGURE_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_HUMIDITY_SENSOR): selector.EntitySelector(
+            selector.EntitySelectorConfig(
+                domain=SENSOR_DOMAIN,
+                device_class=SensorDeviceClass.HUMIDITY,
+                # , filter={"integration": "weather"}
+            ),
+        ),
+        vol.Required(CONF_TEMPERATURE_SENSOR): selector.EntitySelector(
+            selector.EntitySelectorConfig(
+                domain=SENSOR_DOMAIN,  # ,
+                device_class=SensorDeviceClass.TEMPERATURE,
+            ),
+        ),
+        vol.Optional(CONF_MONITOR_SENSOR): selector.EntitySelector(
+            selector.EntitySelectorConfig(
+                domain=SENSOR_DOMAIN,
+                device_class=SensorDeviceClass.TEMPERATURE,
+                # , filter={"integration": "weather"}
+            ),
+        ),
+    }
+)
+
 
 class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for EvaporativeCooling."""
@@ -101,7 +126,7 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "configuration"
             except EvaporativeCoolingTemperatureConfigurationError:
                 errors["base"] = "temperature_sensor"
-            except Exception:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except  # noqa: BLE001
                 LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
 
@@ -132,17 +157,10 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry = self._get_reconfigure_entry()
         if user_input is not None:
             try:
-                user_input[CONF_HUMIDITY_SENSOR] = config_entry.data[
-                    CONF_HUMIDITY_SENSOR
-                ]
-                user_input[CONF_TEMPERATURE_SENSOR] = config_entry.data[
-                    CONF_TEMPERATURE_SENSOR
-                ]
-                user_input[CONF_SENSOR_ID] = config_entry.data[CONF_SENSOR_ID]
-
+                x = 1  #  could make checks on reconfiguration here ...
             except ConfigEntryError:
                 errors["base"] = "configuration"
-            except Exception:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except  # noqa: BLE001
                 LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
@@ -155,24 +173,7 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="reconfigure",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_HUMIDITY_SENSOR): selector.EntitySelector(
-                        selector.EntitySelectorConfig(
-                            domain=SENSOR_DOMAIN,
-                            device_class=SensorDeviceClass.HUMIDITY,
-                            # , filter={"integration": "weather"}
-                        ),
-                    ),
-                    vol.Required(CONF_TEMPERATURE_SENSOR): selector.EntitySelector(
-                        selector.EntitySelectorConfig(
-                            domain=SENSOR_DOMAIN,
-                            device_class=SensorDeviceClass.TEMPERATURE,
-                            # , filter={"integration": "weather"}
-                        ),
-                    ),
-                }
-            ),
+            data_schema=STEP_SETTINGS_RECONFIGURE_SCHEMA,
             errors=errors,
         )
 
@@ -186,7 +187,7 @@ class EvaporativeCoolingOptionsFlowHandler(OptionsFlow):
 
     async def async_step_init(
         self,
-        user_input: dict[str, Any] = None,  # type: ignore  # noqa: PGH003
+        user_input: dict[str, Any] = None,  # type: ignore  # noqa: PGH003, RUF013
     ) -> dict[str, Any]:
         """Handle options flow."""
         if user_input is not None:

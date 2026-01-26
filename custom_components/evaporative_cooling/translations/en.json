@@ -38,6 +38,15 @@
         "sensor": {
             "evaporative_cooling": {
                 "name": "Evaporative Cooling Sensor"
+            },
+            "evaporative_cooling_external_temp": {
+                "name": "Evaporative Cooling External Temperature"
+            },
+            "evaporative_cooling_external_humidity": {
+                "name": "Evaporative Cooling External Humidity"
+            },
+            "evaporative_cooling_internal_temp": {
+                "name": "Evaporative Cooling Internal Temperature"
             }
         }
     }

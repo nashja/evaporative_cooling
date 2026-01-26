@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from statistics import StatisticsError
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import (
@@ -43,7 +42,7 @@ ENTITY_DESCRIPTIONS: tuple[EvaporativeCoolingEntityDescription, ...] = (
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         suggested_display_precision=1,
         icon="mdi:air-conditioner",
-        value_fn=lambda state: state.get("body"),
+        value_fn=lambda state: state.get("ec_temp"),
     ),
     EvaporativeCoolingEntityDescription(
         key="evaporative_cooling_external_temp",
@@ -53,7 +52,7 @@ ENTITY_DESCRIPTIONS: tuple[EvaporativeCoolingEntityDescription, ...] = (
         device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         suggested_display_precision=1,
-        icon="mdi:air-conditioner",
+        icon="mdi:temperature-celsius",
         value_fn=lambda state: state.get("external_temp"),
     ),
     EvaporativeCoolingEntityDescription(
@@ -63,7 +62,7 @@ ENTITY_DESCRIPTIONS: tuple[EvaporativeCoolingEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         device_class=SensorDeviceClass.HUMIDITY,
         native_unit_of_measurement=PERCENTAGE,
-        icon="mdi:air-conditioner",
+        icon="mdi:percent",
         value_fn=lambda state: state.get("external_humidity"),
     ),
     EvaporativeCoolingEntityDescription(
@@ -74,7 +73,7 @@ ENTITY_DESCRIPTIONS: tuple[EvaporativeCoolingEntityDescription, ...] = (
         device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         suggested_display_precision=1,
-        icon="mdi:air-conditioner",
+        icon="mdi:temperature-celsius",
         value_fn=lambda state: state.get("internal_temp"),
     ),
 )
@@ -112,7 +111,9 @@ class EvaporativeCoolingSensor(EvaporativeCoolingEntity, SensorEntity):
     ) -> None:
         """Initialize the sensor class."""
         super().__init__(coordinator)
-        self.entity_description = entity_description
+        self.entity_description: EvaporativeCoolingEntityDescription = (
+            entity_description
+        )
         self._attr_unique_id = f"{entity_description.key}"
         # manufacturer="Sanfrancej.com",  # noqa: ERA001
         # version=VERSION,  # noqa: ERA001
@@ -125,4 +126,4 @@ class EvaporativeCoolingSensor(EvaporativeCoolingEntity, SensorEntity):
             return None
         return self.entity_description.value_fn(state)
 
-        # self.coordinator.data.get("body")
+        # self.coordinator.data.get("body") - this was the old code
