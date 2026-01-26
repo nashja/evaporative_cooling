@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from statistics import StatisticsError
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import (
@@ -11,7 +12,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import PERCENTAGE, UnitOfTemperature
 
 from .entity import EvaporativeCoolingEntity
 
@@ -42,7 +43,39 @@ ENTITY_DESCRIPTIONS: tuple[EvaporativeCoolingEntityDescription, ...] = (
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         suggested_display_precision=1,
         icon="mdi:air-conditioner",
-        value_fn=lambda state: _get_boiler_target(state, BOILER_STEAM),
+        value_fn=lambda state: state.get("body"),
+    ),
+    EvaporativeCoolingEntityDescription(
+        key="evaporative_cooling_external_temp",
+        translation_key="evaporative_cooling_external_temp",
+        name="EC External Temperature Sensor",
+        state_class=SensorStateClass.MEASUREMENT,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        suggested_display_precision=1,
+        icon="mdi:air-conditioner",
+        value_fn=lambda state: state.get("external_temp"),
+    ),
+    EvaporativeCoolingEntityDescription(
+        key="evaporative_cooling_external_humidity",
+        translation_key="evaporative_cooling_external_humidity",
+        name="EC External Humidity Sensor",
+        state_class=SensorStateClass.MEASUREMENT,
+        device_class=SensorDeviceClass.HUMIDITY,
+        native_unit_of_measurement=PERCENTAGE,
+        icon="mdi:air-conditioner",
+        value_fn=lambda state: state.get("external_humidity"),
+    ),
+    EvaporativeCoolingEntityDescription(
+        key="evaporative_cooling_internal_temp",
+        translation_key="evaporative_cooling_internal_temp",
+        name="EC Internal Temperature Sensor",
+        state_class=SensorStateClass.MEASUREMENT,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        suggested_display_precision=1,
+        icon="mdi:air-conditioner",
+        value_fn=lambda state: state.get("internal_temp"),
     ),
 )
 
@@ -80,10 +113,16 @@ class EvaporativeCoolingSensor(EvaporativeCoolingEntity, SensorEntity):
         """Initialize the sensor class."""
         super().__init__(coordinator)
         self.entity_description = entity_description
+        self._attr_unique_id = f"{entity_description.key}"
         # manufacturer="Sanfrancej.com",  # noqa: ERA001
         # version=VERSION,  # noqa: ERA001
 
     @property
     def native_value(self) -> str | None:
         """Return the native value of the sensor."""
-        return self.coordinator.data.get("body")
+        state = self.coordinator.data
+        if state is None:
+            return None
+        return self.entity_description.value_fn(state)
+
+        # self.coordinator.data.get("body")

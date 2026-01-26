@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import (
@@ -28,11 +28,5 @@ class EvaporativeCoolingDataUpdateCoordinator(DataUpdateCoordinator):
             return await self.config_entry.runtime_data.client.async_get_data()
         except ConfigEntryNotReady as exception:
             raise UpdateFailed(exception) from exception
-            # return {"body": "0"}
         except EvaporativeCoolingConfigurationError as exception:
-            return {"body": "0"}
-
-
-#
-# consider adding an exception for no valid data from sensors ...
-#
+            raise UpdateFailed(exception) from exception

@@ -229,7 +229,21 @@ class EvaporativeCoolingApiClient:
             best_temp = EFFICIENCY_CHART[temp_index][humidity_index]
 
             LOGGER.debug("Efficiency Temperature = %f ", best_temp)
-            return {"body": best_temp}
+            #
+            # This can be the difference of target to measured
+            # binary : internal above potential or below potential
+            # Put all the sensor values of interest here, and return them
+            # then when there is a value_fn call which is .get("temp1")
+            # it returns the proper sensor
+            #
+            # This now works, see below, can add all the info want here, and then use
+            # a dictionary to get this in the sensors...
+            return {
+                "body": best_temp,
+                "external_temp": temp,
+                "external_humidity": humidity,
+                "internal_temp": 0,
+            }
         except ValueError as err:
             # raise ConfigEntryNotReady from err
             LOGGER.debug("Unable to calculate temperature", err)
@@ -237,5 +251,10 @@ class EvaporativeCoolingApiClient:
             # raise EvaporativeCoolingReadoutError
         except Exception as err:
             LOGGER.debug("Unable to calculate temperature", err)
-            return {"body": 0}
+            return {
+                "body": 0,
+                "external_temp": temp,
+                "external_humidity": humidity,
+                "internal_temp": 0,
+            }
             # raise EvaporativeCoolingReadoutError from err

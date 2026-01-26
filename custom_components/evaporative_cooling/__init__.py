@@ -11,7 +11,6 @@ from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from homeassistant.const import Platform
-from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.loader import async_get_loaded_integration
 
 from .api import EvaporativeCoolingApiClient
@@ -48,16 +47,10 @@ async def async_setup_entry(
     """Set up this integration using UI."""
     LOGGER.debug("async_setup_entry in __init__.py")
     LOGGER.debug("config_entry.options %s", entry.options)
-    # Initialise the coordinator that manages data updates from the integration
-    # This is defined in coordinator.py
-    #
-    # TODO if there are options - set the coordinator up with the new update interval
-    #
     interval = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
     LOGGER.debug("Scan Interval will be set to %d", interval)
     coordinator = EvaporativeCoolingDataUpdateCoordinator(
         hass=hass,
-        # config_entry=entry, # is this needed?
         logger=LOGGER,
         name="EC Update Coordinator",
         update_interval=timedelta(minutes=interval),
@@ -77,8 +70,6 @@ async def async_setup_entry(
         integration=async_get_loaded_integration(hass, entry.domain),
         coordinator=coordinator,
     )
-    # LOGGER.debug("in init: about to call config_entry_first_refresh")
-    # https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-single-api-poll-for-data-for-all-entities
     await coordinator.async_config_entry_first_refresh()
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
