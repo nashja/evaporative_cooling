@@ -9,6 +9,8 @@ from .const import EFFICIENCY_CHART, EFFICIENCY_HUMIDITY, EFFICIENCY_TEMPERATURE
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
+from math import atan, pow
+
 from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
 
 
@@ -60,6 +62,18 @@ class EvaporativeCoolingApiClient:
         self.ec_sensor_id = ec_sensor_id
         self.hass = hass
 
+    def wet_bulb_temp(self, dry_bulb_temp: float, relative_humidity: float) -> float:
+        """Calculate the wet bulb temperature at - the best EC could do."""
+        T = dry_bulb_temp
+        RH = relative_humidity
+
+        f1 = T * atan(0.151977 * pow((RH + 8.313659), 0.5))
+        f2 = atan(T + RH)
+        f3 = atan(RH - 1.676331)
+        f4 = 0.00391838 * pow(RH, 1.5) * atan(0.023101 * RH)
+        f5 = 4.686035
+        return f1 + f2 - f3 + f4 - f5
+
     @property
     def controller_name(self) -> str:
         """Return the name of the controller."""
@@ -98,17 +112,19 @@ class EvaporativeCoolingApiClient:
                 temp,
                 humidity,
             )
-            for t in range(len(EFFICIENCY_TEMPERATURE)):
-                if temp < EFFICIENCY_TEMPERATURE[t]:
-                    temp_index = t
-                    break
+            # for t in range(len(EFFICIENCY_TEMPERATURE)):
+            #    if temp < EFFICIENCY_TEMPERATURE[t]:
+            #        temp_index = t
+            #        break
 
-            for t in range(len(EFFICIENCY_HUMIDITY)):
-                if humidity < EFFICIENCY_HUMIDITY[t]:
-                    humidity_index = t
-                    break
+            # for t in range(len(EFFICIENCY_HUMIDITY)):
+            #    if humidity < EFFICIENCY_HUMIDITY[t]:
+            #        humidity_index = t
+            #        break
 
-            best_temp = EFFICIENCY_CHART[temp_index][humidity_index]
+            # best_temp = EFFICIENCY_CHART[temp_index][humidity_index]
+
+            best_temp = self.wet_bulb_temp(temp, humidity)
 
             LOGGER.debug("Efficiency Temperature = %f ", best_temp)
             #
