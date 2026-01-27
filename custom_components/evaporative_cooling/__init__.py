@@ -45,8 +45,8 @@ async def async_setup_entry(
     entry: EvaporativeCoolingConfigEntry,
 ) -> bool:
     """Set up this integration using UI."""
-    LOGGER.debug("async_setup_entry in __init__.py")
-    LOGGER.debug("config_entry.options %s", entry.options)
+    # LOGGER.debug("async_setup_entry in __init__.py")  # noqa: ERA001
+    # LOGGER.debug("config_entry.options %s", entry.options)  # noqa: ERA001
     interval = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
     LOGGER.debug("Scan Interval will be set to %d", interval)
     coordinator = EvaporativeCoolingDataUpdateCoordinator(
@@ -64,7 +64,7 @@ async def async_setup_entry(
             temp_sensor_id=entry.data[CONF_TEMPERATURE_SENSOR],
             humidity_sensor_id=entry.data[CONF_HUMIDITY_SENSOR],
             monitor_sensor_id=entry.data.get(CONF_MONITOR_SENSOR, ""),
-            sensor_id=entry.data[CONF_SENSOR_ID],
+            ec_sensor_id=entry.data[CONF_SENSOR_ID],
             hass=hass,
         ),
         integration=async_get_loaded_integration(hass, entry.domain),

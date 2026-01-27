@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import StrEnum
-from sre_parse import State
 from typing import TYPE_CHECKING, Any
 
 from .const import EFFICIENCY_CHART, EFFICIENCY_HUMIDITY, EFFICIENCY_TEMPERATURE, LOGGER
 
 if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant, State
+    from homeassistant.core import HomeAssistant
 
 from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
 
@@ -36,30 +33,6 @@ class EvaporativeCoolingHumidityConfigurationError(
 
 
 #
-# Some types to deal with the sensors we need in the configuration
-#
-class DeviceType(StrEnum):
-    """Device types."""
-
-    EVAPORATIVE_COOLING_SENSOR = "evaporative_cooling_sensor"
-    EC_TEMPERATURE_SENSOR = "evaporative_cooling_temperature_sensor"
-    EC_HUMIDITY_SENSOR = "evaporative_cooling_humidity_sensor"
-    EC_MONITOR_SENSOR = "evaporative_cooling_monitor_sensor"
-    OTHER = "other"
-
-
-@dataclass
-class Device:
-    """API device."""
-
-    device_id: str
-    device_unique_id: str | None
-    device_type: DeviceType
-    name: str
-    state: State | None
-
-
-#
 # The API here will be to make sure that the temperature sensors are available.
 # And then update will get the current state of the temperature sensors
 # need to initialise this with the names of the sensors
@@ -77,54 +50,20 @@ class EvaporativeCoolingApiClient:
         temp_sensor_id: str,
         humidity_sensor_id: str,
         monitor_sensor_id: str,
-        sensor_id: str,
+        ec_sensor_id: str,
         hass: HomeAssistant,
     ) -> None:
-        """Initialise the API Client."""
-        self.temp_sensor = Device(
-            device_id=temp_sensor_id,
-            device_type=DeviceType.EC_TEMPERATURE_SENSOR,
-            name="",
-            state=None,
-            device_unique_id=None,
-        )
-
-        self.humidity_sensor = Device(
-            device_id=humidity_sensor_id,
-            device_type=DeviceType.EC_HUMIDITY_SENSOR,
-            name="",
-            state=None,
-            device_unique_id=None,
-        )
-
-        self.monitor_sensor = Device(
-            device_id=monitor_sensor_id,
-            device_type=DeviceType.EC_MONITOR_SENSOR,
-            name="",
-            state=None,
-            device_unique_id=None,
-        )
-
-        self.ec_sensor = Device(
-            device_id=sensor_id,
-            device_type=DeviceType.EVAPORATIVE_COOLING_SENSOR,
-            name="",
-            state=None,
-            device_unique_id=None,
-        )
-
-        self.connected: bool = False
+        """Initialize the sensor IDs used by the API ."""
+        self.temp_sensor_id = temp_sensor_id
+        self.humidity_sensor_id = humidity_sensor_id
+        self.monitor_sensor_id = monitor_sensor_id
+        self.ec_sensor_id = ec_sensor_id
         self.hass = hass
 
     @property
     def controller_name(self) -> str:
         """Return the name of the controller."""
-        return self.ec_sensor.device_id.replace(".", "_")
-
-    def disconnect(self) -> bool:
-        """Disconnect from api."""
-        self.connected = False
-        return True
+        return self.ec_sensor_id.replace(".", "_")
 
     async def async_get_data(self) -> Any:
         """Get data from the API."""
@@ -135,11 +74,11 @@ class EvaporativeCoolingApiClient:
     # then all the code for HA works to retry etc without error.
     # The ids all come from the configuration
     async def _api_wrapper(self) -> Any:
-        tsensor = self.hass.states.get(self.temp_sensor.device_id)
+        tsensor = self.hass.states.get(self.temp_sensor_id)
         if not tsensor:
             msg = "EC Temperature sensor not available"
             raise ConfigEntryNotReady(msg)
-        hsensor = self.hass.states.get(self.humidity_sensor.device_id)
+        hsensor = self.hass.states.get(self.humidity_sensor_id)
         if not hsensor:
             msg = "EC Humidity sensor not available"
             raise ConfigEntryNotReady(msg)
@@ -183,15 +122,13 @@ class EvaporativeCoolingApiClient:
             # a dictionary to get this in the sensors...
             internal_temp = "unavailable"
             delta_temp = "unavailable"
-            msensor = self.hass.states.get(self.monitor_sensor.device_id)
+            msensor = self.hass.states.get(self.monitor_sensor_id)
+            #
+            # If there is an internal monitor sensor - can provide other state info
+            #
             if msensor and msensor.state not in {"unknown", "unavailable"}:
                 internal_temp = float(msensor.state)
                 delta_temp = internal_temp - best_temp
-            LOGGER.debug(
-                "EC - API get-device-value (lookup): internal temp Sensor= %s,device_id = %s",  # noqa: E501
-                internal_temp,
-                self.monitor_sensor.device_id,
-            )
         except ValueError as err:
             # raise ConfigEntryNotReady from err
             LOGGER.debug("Unable to calculate temperature", err)
