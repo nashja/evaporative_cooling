@@ -157,7 +157,12 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry = self._get_reconfigure_entry()
         if user_input is not None:
             try:
-                x = 1  #  could make checks on reconfiguration here ...
+                LOGGER.debug(
+                    "EC - Reconfigure (lookup): temp Sensor= %s,humididty sensor = %s",  # noqa: E501
+                    user_input[CONF_TEMPERATURE_SENSOR],
+                    user_input[CONF_HUMIDITY_SENSOR],
+                )
+            #  could make checks on reconfiguration here ...
             except ConfigEntryError:
                 errors["base"] = "configuration"
             except Exception:  # pylint: disable=broad-except  # noqa: BLE001
@@ -170,7 +175,10 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     data={**config_entry.data, **user_input},
                     reason="reconfigure_successful",
                 )
-
+        hsensor = config_entry.data["humidity_sensor"]
+        tsensor = config_entry.data["temperature_sensor"]
+        msensor = config_entry.data["monitor_sensor"]
+        # The above now need to go into the defaults for the reconfigure schema...? or not - if they disappeared?
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=STEP_SETTINGS_RECONFIGURE_SCHEMA,

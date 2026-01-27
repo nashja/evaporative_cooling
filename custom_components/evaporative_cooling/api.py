@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from .const import EFFICIENCY_CHART, EFFICIENCY_HUMIDITY, EFFICIENCY_TEMPERATURE, LOGGER
+from .const import LOGGER
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
-from math import atan, pow
+from math import atan
 
 from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
 
@@ -64,8 +64,8 @@ class EvaporativeCoolingApiClient:
 
     def wet_bulb_temp(self, dry_bulb_temp: float, relative_humidity: float) -> float:
         """Calculate the wet bulb temperature at - the best EC could do."""
-        T = dry_bulb_temp
-        RH = relative_humidity
+        T = dry_bulb_temp  # noqa: N806
+        RH = relative_humidity  # noqa: N806
 
         f1 = T * atan(0.151977 * pow((RH + 8.313659), 0.5))
         f2 = atan(T + RH)
@@ -112,17 +112,6 @@ class EvaporativeCoolingApiClient:
                 temp,
                 humidity,
             )
-            # for t in range(len(EFFICIENCY_TEMPERATURE)):
-            #    if temp < EFFICIENCY_TEMPERATURE[t]:
-            #        temp_index = t
-            #        break
-
-            # for t in range(len(EFFICIENCY_HUMIDITY)):
-            #    if humidity < EFFICIENCY_HUMIDITY[t]:
-            #        humidity_index = t
-            #        break
-
-            # best_temp = EFFICIENCY_CHART[temp_index][humidity_index]
 
             best_temp = self.wet_bulb_temp(temp, humidity)
 
