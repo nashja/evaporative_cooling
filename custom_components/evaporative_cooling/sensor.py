@@ -76,6 +76,17 @@ ENTITY_DESCRIPTIONS: tuple[EvaporativeCoolingEntityDescription, ...] = (
         icon="mdi:temperature-celsius",
         value_fn=lambda state: state.get("internal_temp"),
     ),
+    EvaporativeCoolingEntityDescription(
+        key="evaporative_cooling_delta_temp",
+        translation_key="evaporative_cooling_delta_temp",
+        name="EC Temperature Difference from Minimum",
+        state_class=SensorStateClass.MEASUREMENT,
+        device_class=SensorDeviceClass.TEMPERATURE_DELTA,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        suggested_display_precision=1,
+        icon="mdi:temperature-celsius",
+        value_fn=lambda state: state.get("temp_delta"),
+    ),
 )
 
 

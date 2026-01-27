@@ -181,21 +181,17 @@ class EvaporativeCoolingApiClient:
             #
             # This now works, see below, can add all the info want here, and then use
             # a dictionary to get this in the sensors...
-            internal_temp = 0
+            internal_temp = "unavailable"
+            delta_temp = "unavailable"
             msensor = self.hass.states.get(self.monitor_sensor.device_id)
             if msensor and msensor.state not in {"unknown", "unavailable"}:
-                internal_temp = msensor.state
+                internal_temp = float(msensor.state)
+                delta_temp = internal_temp - best_temp
             LOGGER.debug(
                 "EC - API get-device-value (lookup): internal temp Sensor= %s,device_id = %s",  # noqa: E501
                 internal_temp,
                 self.monitor_sensor.device_id,
             )
-            return {  # noqa: TRY300
-                "ec_temp": best_temp,
-                "external_temp": temp,
-                "external_humidity": humidity,
-                "internal_temp": internal_temp,
-            }
         except ValueError as err:
             # raise ConfigEntryNotReady from err
             LOGGER.debug("Unable to calculate temperature", err)
@@ -209,4 +205,11 @@ class EvaporativeCoolingApiClient:
                 "external_humidity": humidity,
                 "internal_temp": internal_temp,
             }
-            # raise EvaporativeCoolingReadoutError from err
+        else:
+            return {
+                "ec_temp": best_temp,
+                "external_temp": temp,
+                "external_humidity": humidity,
+                "internal_temp": internal_temp,
+                "temp_delta": delta_temp,
+            }
