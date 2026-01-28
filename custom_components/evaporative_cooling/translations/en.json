@@ -9,6 +9,26 @@
                     "humidity_sensor": "Select Humidity Sensor",
                     "temperature_sensor": "Select Temperature Sensor",
                     "monitor_sensor": "Select Internal Temperature Monitoring sensor"
+                },
+                "data_description": {
+                    "sensor_id": "This will be the name of the EC Wet Bulb Temperature",
+                    "humidity_sensor": "A local outdoor humidity sensor",
+                    "temperature_sensor": "A local outdoor temperature sensor",
+                    "monitor_sensor": "An indoor temperature sensor (optional)"
+                }
+            },
+            "reconfigure": {
+                "title": "Reconfigure Sensors",
+                "description": "Change the sensors used for calculating the EC temperature - empty sensors will remain unchanged",
+                "data": {
+                    "humidity_sensor": "Select Humidity Sensor",
+                    "temperature_sensor": "Select Temperature Sensor",
+                    "monitor_sensor": "Select Internal Temperature Monitoring sensor"
+                },
+                "data_description": {
+                    "humidity_sensor": "A local outdoor humidity sensor",
+                    "temperature_sensor": "A local outdoor temperature sensor",
+                    "monitor_sensor": "An indoor temperature sensor"
                 }
             }
         },
@@ -27,9 +47,10 @@
         },
         "step": {
             "init": {
-                "title": "Manage EC Options",
+                "description": "Select update frequency (in minutes)",
+                "title": "Manage Evaporative Cooling Update Options",
                 "data": {
-                    "frequency": "update frequency"
+                    "scan_interval": "update frequency"
                 }
             }
         }

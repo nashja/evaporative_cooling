@@ -66,13 +66,13 @@ STEP_SETTINGS_DATA_SCHEMA = vol.Schema(
 
 STEP_SETTINGS_RECONFIGURE_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_HUMIDITY_SENSOR): selector.EntitySelector(
+        vol.Optional(CONF_HUMIDITY_SENSOR): selector.EntitySelector(
             selector.EntitySelectorConfig(
                 domain=SENSOR_DOMAIN,
                 device_class=SensorDeviceClass.HUMIDITY,
             ),
         ),
-        vol.Required(CONF_TEMPERATURE_SENSOR): selector.EntitySelector(
+        vol.Optional(CONF_TEMPERATURE_SENSOR): selector.EntitySelector(
             selector.EntitySelectorConfig(
                 domain=SENSOR_DOMAIN,
                 device_class=SensorDeviceClass.TEMPERATURE,
@@ -156,8 +156,8 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 LOGGER.debug(
                     "EC - Reconfigure (lookup): temp Sensor= %s,humididty sensor = %s",
-                    user_input[CONF_TEMPERATURE_SENSOR],
-                    user_input[CONF_HUMIDITY_SENSOR],
+                    user_input.get(CONF_TEMPERATURE_SENSOR, "unchanged"),
+                    user_input.get(CONF_HUMIDITY_SENSOR, "unchanged"),
                 )
             #  could make checks on reconfiguration here ...
             except ConfigEntryError:
@@ -188,12 +188,12 @@ class EvaporativeCoolingOptionsFlowHandler(OptionsFlow):
 
     async def async_step_init(
         self,
-        user_input: dict[str, Any] = None,  # type: ignore  # noqa: PGH003, RUF013
-    ) -> dict[str, Any]:
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
         """Handle options flow."""
         if user_input is not None:
             options = self.config_entry.options | user_input
-            return self.async_create_entry(title="", data=options)  # type: ignore  # noqa: PGH003
+            return self.async_create_entry(title="", data=options)
         # It is recommended to prepopulate options fields with default values if
         # available.
         # These will be the same default values you use on your coordinator for setting
