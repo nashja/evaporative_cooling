@@ -174,7 +174,43 @@ class EvaporativeCoolingFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 )
         return self.async_show_form(
             step_id="reconfigure",
-            data_schema=STEP_SETTINGS_RECONFIGURE_SCHEMA,
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_HUMIDITY_SENSOR,
+                        default=(config_entry.data or {}).get(
+                            CONF_HUMIDITY_SENSOR, vol.UNDEFINED
+                        ),
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            domain=SENSOR_DOMAIN,
+                            device_class=SensorDeviceClass.HUMIDITY,
+                        ),
+                    ),
+                    vol.Optional(
+                        CONF_TEMPERATURE_SENSOR,
+                        default=(config_entry.data or {}).get(
+                            CONF_TEMPERATURE_SENSOR, vol.UNDEFINED
+                        ),
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            domain=SENSOR_DOMAIN,
+                            device_class=SensorDeviceClass.TEMPERATURE,
+                        ),
+                    ),
+                    vol.Optional(
+                        CONF_MONITOR_SENSOR,
+                        default=(config_entry.data or {}).get(
+                            CONF_MONITOR_SENSOR, vol.UNDEFINED
+                        ),
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            domain=SENSOR_DOMAIN,
+                            device_class=SensorDeviceClass.TEMPERATURE,
+                        ),
+                    ),
+                },
+            ),
             errors=errors,
         )
 
